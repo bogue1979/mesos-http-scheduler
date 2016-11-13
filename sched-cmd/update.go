@@ -23,6 +23,10 @@ func (s *scheduler) status(status *mesos.TaskStatus) {
 		)
 	}
 
+	if status.GetState() == mesos.TaskState_TASK_RUNNING {
+		log.Printf("Task with ID %s in state RUNNING", status.GetTaskId().GetValue())
+	}
+
 	// send ack
 	if status.GetUuid() != nil {
 		call := &sched.Call{

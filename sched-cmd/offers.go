@@ -21,7 +21,7 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 		//log.Println("cpus available for tasks: ", cpus, " mems available: ", mems)
 		call := &sched.Call{}
 		if s.acceptNew == false {
-			log.Printf("scheduler %#v", s)
+			//log.Printf("scheduler %#v", s)
 			call = &sched.Call{
 				FrameworkId: s.framework.GetId(),
 				Type:        sched.Call_DECLINE.Enum(),

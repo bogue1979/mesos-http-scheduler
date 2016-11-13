@@ -166,10 +166,10 @@ func (s *scheduler) handleEvents() {
 }
 
 var (
-	master    = flag.String("master", "127.0.0.1:5050", "Master address <ip:port>")
-	execPath  = flag.String("executor", "./exec", "Path to test executor")
+	master = flag.String("master", "127.0.0.1:5050", "Master address <ip:port>")
+	//execPath  = flag.String("executor", "./exec", "Path to test executor")
 	mesosUser = flag.String("user", "", "Framework user")
-	maxTasks  = flag.Int("maxtasks", 5, "Mesos authentication principal")
+	maxTasks  = flag.Int("maxtasks", 5, "Maximal concurrent tasks")
 	cmd       = flag.String("cmd", "echo 'Hello World'", "Command to execute")
 )
 
