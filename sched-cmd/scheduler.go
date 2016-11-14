@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/user"
+	"time"
 
 	"github.com/bogue1979/mesos-sqs-poc/client"
 	"github.com/bogue1979/mesos-sqs-poc/mesos/mesos"
@@ -22,7 +23,6 @@ type scheduler struct {
 	executor     *mesos.ExecutorInfo
 	command      *mesos.CommandInfo
 	taskLaunched int
-	taskFinished int
 	maxTasks     int
 
 	client     *client.Client
@@ -40,8 +40,8 @@ func newSched(master string, fw *mesos.FrameworkInfo, cmd *mesos.CommandInfo) *s
 		client:     client.New(master, "/api/v1/scheduler"),
 		framework:  fw,
 		command:    cmd,
-		cpuPerTask: 1,
-		memPerTask: 128,
+		cpuPerTask: 0.1,
+		memPerTask: 64,
 		maxTasks:   5,
 		events:     make(chan *sched.Event),
 		doneChan:   make(chan struct{}),
@@ -56,6 +56,7 @@ func (s *scheduler) start() <-chan struct{} {
 		log.Fatal(err)
 	}
 	go s.handleEvents()
+	go s.acceptOffers()
 	return s.doneChan
 }
 
@@ -111,6 +112,16 @@ func (s *scheduler) qEvents(resp *http.Response) {
 			continue
 		}
 		s.events <- event
+	}
+}
+
+func (s *scheduler) acceptOffers() {
+	c := time.Tick(time.Duration(*waitTime) * time.Second)
+	for now := range c {
+		if s.acceptNew != true {
+			log.Printf("%s scheduler accept new work", now)
+			s.acceptNew = true
+		}
 	}
 }
 
@@ -171,6 +182,7 @@ var (
 	mesosUser = flag.String("user", "", "Framework user")
 	maxTasks  = flag.Int("maxtasks", 5, "Maximal concurrent tasks")
 	cmd       = flag.String("cmd", "echo 'Hello World'", "Command to execute")
+	waitTime  = flag.Int("wait", 60, "Wait in seconds before launching new Tasks")
 )
 
 func init() {
@@ -199,6 +211,11 @@ func main() {
 		Shell: proto.Bool(true),
 		Value: proto.String(*cmd),
 	}
+
+	// health for marathon ;-)
+	http.HandleFunc("/", root)
+	http.HandleFunc("/health", health)
+	go http.ListenAndServe(":8080", nil)
 
 	sched := newSched(*master, fw, cmdInfo)
 	sched.maxTasks = *maxTasks

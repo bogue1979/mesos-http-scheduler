@@ -51,7 +51,7 @@ func (s *scheduler) status(status *mesos.TaskStatus) {
 	}
 
 	if status.GetState() == mesos.TaskState_TASK_ERROR {
-		s.taskFinished++
+		s.taskLaunched--
 		log.Println(
 			"Task ID ", status.TaskId.GetValue(),
 			" state = ", status.GetState().String(),
@@ -61,15 +61,6 @@ func (s *scheduler) status(status *mesos.TaskStatus) {
 
 	if status.GetState() == mesos.TaskState_TASK_FINISHED {
 		log.Println("Finished task: ", status.GetTaskId().GetValue())
-		s.taskFinished++
+		s.taskLaunched--
 	}
-
-	if s.taskFinished == s.maxTasks {
-		log.Println("Scheduler executed all tasks")
-		s.taskLaunched = 0
-		s.taskFinished = 0
-		s.acceptNew = true
-		//s.stop()
-	}
-
 }

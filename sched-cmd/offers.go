@@ -63,9 +63,12 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 				s.taskLaunched++
 				cpus -= s.cpuPerTask
 				mems -= s.memPerTask
-				//log.Println("cpus remaining: ", cpus, " mems remaining: ", mems)
+				log.Println("cpus remaining: ", cpus, " mems remaining: ", mems)
+
+				if s.taskLaunched == s.maxTasks {
+					s.acceptNew = false
+				}
 			}
-			s.acceptNew = false
 
 			// setup launch call
 			call = &sched.Call{
