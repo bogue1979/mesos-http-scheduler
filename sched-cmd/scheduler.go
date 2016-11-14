@@ -40,8 +40,8 @@ func newSched(master string, fw *mesos.FrameworkInfo, cmd *mesos.CommandInfo) *s
 		client:     client.New(master, "/api/v1/scheduler"),
 		framework:  fw,
 		command:    cmd,
-		cpuPerTask: 0.1,
-		memPerTask: 64,
+		cpuPerTask: *cpu,
+		memPerTask: float64(*mem),
 		maxTasks:   5,
 		events:     make(chan *sched.Event),
 		doneChan:   make(chan struct{}),
@@ -90,7 +90,7 @@ func (s *scheduler) subscribe() error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Subscribe with unexpected response status: %d", resp.StatusCode)
 	}
-	log.Println("Mesos-Stream-Id:", s.client.StreamID)
+	debugLog(fmt.Sprintln("Mesos-Stream-Id:", s.client.StreamID))
 
 	go s.qEvents(resp)
 
@@ -119,7 +119,7 @@ func (s *scheduler) acceptOffers() {
 	c := time.Tick(time.Duration(*waitTime) * time.Second)
 	for now := range c {
 		if s.acceptNew != true {
-			log.Printf("%s scheduler accept new work", now)
+			debugLog(fmt.Sprintf("%s scheduler accept new work", now))
 			s.acceptNew = true
 		}
 	}
@@ -137,11 +137,11 @@ func (s *scheduler) handleEvents() {
 
 		case sched.Event_OFFERS:
 			offers := ev.GetOffers().GetOffers()
-			log.Println("Received ", len(offers), " offers ")
+			debugLog(fmt.Sprintln("Received ", len(offers), " offers "))
 			go s.offers(offers)
 
 		case sched.Event_RESCIND:
-			log.Println("Received rescind offers")
+			debugLog(fmt.Sprintln("Received rescind offers"))
 
 		case sched.Event_UPDATE:
 			status := ev.GetUpdate().GetStatus()
@@ -170,9 +170,8 @@ func (s *scheduler) handleEvents() {
 			log.Println(err)
 
 		case sched.Event_HEARTBEAT:
-			log.Println("HEARTBEAT")
+			debugLog(fmt.Sprintln("HEARTBEAT"))
 		}
-
 	}
 }
 
@@ -182,7 +181,10 @@ var (
 	mesosUser = flag.String("user", "", "Framework user")
 	maxTasks  = flag.Int("maxtasks", 5, "Maximal concurrent tasks")
 	cmd       = flag.String("cmd", "echo 'Hello World'", "Command to execute")
-	waitTime  = flag.Int("wait", 60, "Wait in seconds before launching new Tasks")
+	debug     = flag.Bool("debug", false, "Print debug logs")
+	waitTime  = flag.Int("wait", 60, "Wait in seconds before launching new tasks")
+	cpu       = flag.Float64("cpu", 0.1, "Cpu Resources for one task")
+	mem       = flag.Int("mem", 64, "Memory for one task in MB")
 )
 
 func init() {

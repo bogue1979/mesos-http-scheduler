@@ -14,14 +14,13 @@ import (
 // Offers handle incoming offers
 func (s *scheduler) offers(offers []*mesos.Offer) {
 	for _, offer := range offers {
-		log.Println("Processing offer ", offer.Id.GetValue())
+		debugLog(fmt.Sprintln("Processing offer ", offer.Id.GetValue()))
 
 		cpus, mems := s.offeredResources(offer)
 		var tasks []*mesos.TaskInfo
-		//log.Println("cpus available for tasks: ", cpus, " mems available: ", mems)
+		debugLog(fmt.Sprintln("cpus available for tasks: ", cpus, " mems available: ", mems))
 		call := &sched.Call{}
 		if s.acceptNew == false {
-			//log.Printf("scheduler %#v", s)
 			call = &sched.Call{
 				FrameworkId: s.framework.GetId(),
 				Type:        sched.Call_DECLINE.Enum(),
@@ -38,7 +37,7 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 				mems >= s.memPerTask {
 
 				taskID := fmt.Sprintf("%d", time.Now().UnixNano())
-				//log.Println("Preparing task with id ", taskID, " for launch")
+				debugLog(fmt.Sprintln("Preparing task with id ", taskID, " for launch"))
 				task := &mesos.TaskInfo{
 					Name: proto.String(fmt.Sprintf("task-%s", taskID)),
 					TaskId: &mesos.TaskID{
@@ -63,7 +62,6 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 				s.taskLaunched++
 				cpus -= s.cpuPerTask
 				mems -= s.memPerTask
-				log.Println("cpus remaining: ", cpus, " mems remaining: ", mems)
 
 				if s.taskLaunched == s.maxTasks {
 					s.acceptNew = false
