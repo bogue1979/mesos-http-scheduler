@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	mesosjson "github.com/bogue1979/mesos-sqs-poc/mesos/json"
+	mesosjson "github.com/bogue1979/mesos-http-scheduler/mesos/json"
 )
 
 type Client struct {

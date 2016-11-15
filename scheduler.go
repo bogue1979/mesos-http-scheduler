@@ -2,18 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"os/user"
 	"time"
 
-	"github.com/bogue1979/mesos-sqs-poc/client"
-	"github.com/bogue1979/mesos-sqs-poc/mesos/mesos"
-	sched "github.com/bogue1979/mesos-sqs-poc/mesos/sched"
+	"github.com/bogue1979/mesos-http-scheduler/client"
+	"github.com/bogue1979/mesos-http-scheduler/mesos/mesos"
+	sched "github.com/bogue1979/mesos-http-scheduler/mesos/sched"
 	"github.com/gogo/protobuf/proto"
 )
 
@@ -29,20 +26,22 @@ type scheduler struct {
 	callClient *client.Client
 	cpuPerTask float64
 	memPerTask float64
+	waitTime   int64
 	events     chan *sched.Event
 	doneChan   chan struct{}
 	acceptNew  bool
 }
 
 // New returns a pointer to new Scheduler
-func newSched(master string, fw *mesos.FrameworkInfo, cmd *mesos.CommandInfo) *scheduler {
+func newSched(master string, fw *mesos.FrameworkInfo, cmd *mesos.CommandInfo, mem, cpu float64, wait int64) *scheduler {
 	return &scheduler{
 		client:     client.New(master, "/api/v1/scheduler"),
 		framework:  fw,
 		command:    cmd,
-		cpuPerTask: *cpu,
-		memPerTask: float64(*mem),
+		cpuPerTask: cpu,
+		memPerTask: mem,
 		maxTasks:   5,
+		waitTime:   wait,
 		events:     make(chan *sched.Event),
 		doneChan:   make(chan struct{}),
 		acceptNew:  true,
@@ -116,7 +115,7 @@ func (s *scheduler) qEvents(resp *http.Response) {
 }
 
 func (s *scheduler) acceptOffers() {
-	c := time.Tick(time.Duration(*waitTime) * time.Second)
+	c := time.Tick(time.Duration(s.waitTime) * time.Second)
 	for now := range c {
 		if s.acceptNew != true {
 			debugLog(fmt.Sprintf("%s scheduler accept new work", now))
@@ -173,53 +172,4 @@ func (s *scheduler) handleEvents() {
 			debugLog(fmt.Sprintln("HEARTBEAT"))
 		}
 	}
-}
-
-var (
-	master = flag.String("master", "127.0.0.1:5050", "Master address <ip:port>")
-	//execPath  = flag.String("executor", "./exec", "Path to test executor")
-	mesosUser = flag.String("user", "", "Framework user")
-	maxTasks  = flag.Int("maxtasks", 5, "Maximal concurrent tasks")
-	cmd       = flag.String("cmd", "echo 'Hello World'", "Command to execute")
-	debug     = flag.Bool("debug", false, "Print debug logs")
-	waitTime  = flag.Int("wait", 60, "Wait in seconds before launching new tasks")
-	cpu       = flag.Float64("cpu", 0.1, "Cpu Resources for one task")
-	mem       = flag.Int("mem", 64, "Memory for one task in MB")
-)
-
-func init() {
-	flag.Parse()
-}
-
-func main() {
-	if *mesosUser == "" {
-		u, err := user.Current()
-		if err != nil {
-			log.Fatal("Unable to determine user")
-		}
-		*mesosUser = u.Username
-	}
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "UNKNOWN"
-	}
-
-	fw := &mesos.FrameworkInfo{
-		User:     mesosUser,
-		Name:     proto.String("Go-HTTP Scheduler"),
-		Hostname: proto.String(hostname),
-	}
-	cmdInfo := &mesos.CommandInfo{
-		Shell: proto.Bool(true),
-		Value: proto.String(*cmd),
-	}
-
-	// health for marathon ;-)
-	http.HandleFunc("/", root)
-	http.HandleFunc("/health", health)
-	go http.ListenAndServe(":8080", nil)
-
-	sched := newSched(*master, fw, cmdInfo)
-	sched.maxTasks = *maxTasks
-	<-sched.start()
 }

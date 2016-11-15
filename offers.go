@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	mesos "github.com/bogue1979/mesos-sqs-poc/mesos/mesos"
-	sched "github.com/bogue1979/mesos-sqs-poc/mesos/sched"
+	mesos "github.com/bogue1979/mesos-http-scheduler/mesos/mesos"
+	sched "github.com/bogue1979/mesos-http-scheduler/mesos/sched"
 	"github.com/gogo/protobuf/proto"
 )
 

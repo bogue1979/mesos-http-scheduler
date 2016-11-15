@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bogue1979/mesos-sqs-poc/mesos/mesos"
-	sched "github.com/bogue1979/mesos-sqs-poc/mesos/sched"
+	"github.com/bogue1979/mesos-http-scheduler/mesos/mesos"
+	sched "github.com/bogue1979/mesos-http-scheduler/mesos/sched"
 )
 
 func (s *scheduler) status(status *mesos.TaskStatus) {

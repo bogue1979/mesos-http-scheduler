@@ -17,7 +17,7 @@
 syntax = "proto2";
 
 package mesos;
-import "github.com/bogue1979/mesos-sqs-poc/mesos/mesos/mesos.proto";
+import "github.com/bogue1979/mesos-http-scheduler/mesos/mesos/mesos.proto";
 option go_package = "sched";
 
 
