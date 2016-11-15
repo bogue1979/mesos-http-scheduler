@@ -37,10 +37,12 @@ mkdir -p out && docker run -v $(pwd)/out:/go/bin golang sh -c "go get github.com
 
 ```
 
+
+### Running framework
+
 Basically point the scheduler to the mesos master and tell him how many parallel tasks you want to start in the cluster.
 
 ```
-# example
 ./mesos-http-scheduler -master 192.168.102.2:5050 -mem 128 -cpu 0.2 -cmd 'for i in $(seq 1 $(shuf -i 1-20 -n 1)); do echo $i && sleep 1 ; done' -maxtasks 5 -user root -wait 60
 2016/11/14 21:51:17 Subscribed: FrameworkID:  377618e9-37ac-4f5b-931f-601af0d7545d-0001
 2016/11/14 21:51:17 Task with ID 1479156677302010578 in state RUNNING
@@ -68,7 +70,7 @@ Basically point the scheduler to the mesos master and tell him how many parallel
 This command will start 5 tasks distributed over the mesos cluster. When these tasks are finished it will start new tasks ( up to 5 ) after 70 seconds.
 
 
-### command line parameters
+### Command line parameters
 
 ```
 
