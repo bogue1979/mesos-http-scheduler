@@ -82,7 +82,7 @@ Usage of ./mesos-http-scheduler:
   -debug
     	Print debug logs
   -master string
-    	Master address <ip:port> (default "127.0.0.1:5050")
+    	Master addresses <ip:port>[,<ip:port>..] (default "127.0.0.1:5050")
   -maxtasks int
     	Maximal concurrent tasks (default 5)
   -mem int

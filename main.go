@@ -2,17 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/user"
+	"strings"
 
 	"github.com/bogue1979/mesos-http-scheduler/mesos/mesos"
 	"github.com/gogo/protobuf/proto"
 )
 
 var (
-	master    = flag.String("master", "127.0.0.1:5050", "Master address <ip:port>")
+	master    = flag.String("master", "127.0.0.1:5050", "Master addresses <ip:port>[,<ip:port>..]")
 	mesosUser = flag.String("user", "", "Framework user")
 	maxTasks  = flag.Int("maxtasks", 5, "Maximal concurrent tasks")
 	cmd       = flag.String("cmd", "echo 'Hello World'", "Command to execute")
@@ -26,7 +28,26 @@ func init() {
 	flag.Parse()
 }
 
+func findMesosMaster(masters string) (string, error) {
+	masterservers := strings.Split(masters, ",")
+
+	for _, master := range masterservers {
+		fmt.Println(master)
+
+		resp, err := http.Get("http://" + master + "/api/v1/scheduler")
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == 405 {
+			return master, nil
+		}
+	}
+	return "", fmt.Errorf("could not find master")
+}
+
 func main() {
+
 	if *mesosUser == "" {
 		u, err := user.Current()
 		if err != nil {
@@ -34,9 +55,16 @@ func main() {
 		}
 		*mesosUser = u.Username
 	}
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "UNKNOWN"
+	}
+
+	mmaster, err := findMesosMaster(*master)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	fw := &mesos.FrameworkInfo{
@@ -54,7 +82,7 @@ func main() {
 	http.HandleFunc("/health", health)
 	go http.ListenAndServe(":8080", nil)
 
-	sched := newSched(*master, fw, cmdInfo, float64(*mem), *cpu, *waitTime)
+	sched := newSched(mmaster, fw, cmdInfo, float64(*mem), *cpu, *waitTime)
 	sched.maxTasks = *maxTasks
 	<-sched.start()
 }
