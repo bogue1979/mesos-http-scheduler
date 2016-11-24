@@ -43,31 +43,24 @@ mkdir -p out && docker run -v $(pwd)/out:/go/bin golang sh -c "go get github.com
 Basically point the scheduler to the mesos master and tell him how many parallel tasks you want to start in the cluster.
 
 ```
-./mesos-http-scheduler -master 192.168.102.2:5050 -mem 128 -cpu 0.2 -cmd 'for i in $(seq 1 $(shuf -i 1-20 -n 1)); do echo $i && sleep 1 ; done' -maxtasks 5 -user root -wait 60
-2016/11/14 21:51:17 Subscribed: FrameworkID:  377618e9-37ac-4f5b-931f-601af0d7545d-0001
-2016/11/14 21:51:17 Task with ID 1479156677302010578 in state RUNNING
-2016/11/14 21:51:17 Task with ID 1479156677302022756 in state RUNNING
-2016/11/14 21:51:17 Task with ID 1479156677302026166 in state RUNNING
-2016/11/14 21:51:17 Task with ID 1479156677302016999 in state RUNNING
-2016/11/14 21:51:17 Task with ID 1479156677302029183 in state RUNNING
-2016/11/14 21:51:22 Finished task:  1479156677302010578
-2016/11/14 21:51:26 Finished task:  1479156677302026166
-2016/11/14 21:51:29 Finished task:  1479156677302016999
-2016/11/14 21:51:31 Finished task:  1479156677302022756
-2016/11/14 21:51:33 Finished task:  1479156677302029183
-2016/11/14 21:52:20 Task with ID 1479156740335434519 in state RUNNING
-2016/11/14 21:52:20 Task with ID 1479156740335441201 in state RUNNING
-2016/11/14 21:52:20 Task with ID 1479156740335447633 in state RUNNING
-2016/11/14 21:52:20 Task with ID 1479156740335450764 in state RUNNING
-2016/11/14 21:52:20 Task with ID 1479156740335444457 in state RUNNING
-2016/11/14 21:52:21 Finished task:  1479156740335444457
-2016/11/14 21:52:22 Finished task:  1479156740335447633
-2016/11/14 21:52:29 Finished task:  1479156740335441201
-2016/11/14 21:52:33 Finished task:  1479156740335450764
-2016/11/14 21:52:38 Finished task:  1479156740335434519
+./mesos-http-scheduler -master 10.4.1.10:5050,10.4.2.10:5050,10.4.1.57:5050 -cmd 'for i in $(seq 1 $(shuf -i 1-20 -n 1)); do echo $i &&sleep 1; done' -maxtasks 2 -user root -wait 60 -img meteogroup/centos:7
+Current Master is  10.4.1.57:5050
+2016/11/24 17:48:55 Subscribed: FrameworkID:  0921d6b7-ff26-46ef-b168-43809b11e76e-0014
+2016/11/24 17:48:58 Task with ID 1480006135827894577 in state RUNNING
+2016/11/24 17:48:58 Task with ID 1480006135827870836 in state RUNNING
+2016/11/24 17:48:59 Finished task:  1480006135827894577
+2016/11/24 17:49:16 Finished task:  1480006135827870836
+2016/11/24 17:50:11 Task with ID 1480006195824173035 in state RUNNING
+2016/11/24 17:50:11 Task with ID 1480006195824190594 in state RUNNING
+2016/11/24 17:50:13 Finished task:  1480006195824173035
+2016/11/24 17:50:25 Finished task:  1480006195824190594
+2016/11/24 17:50:58 Task with ID 1480006255930854880 in state RUNNING
+2016/11/24 17:50:59 Task with ID 1480006255930878553 in state RUNNING
+2016/11/24 17:51:04 Finished task:  1480006255930878553
+2016/11/24 17:51:17 Finished task:  1480006255930854880
 ```
 
-This command will start 5 tasks distributed over the mesos cluster. When these tasks are finished it will start new tasks ( up to 5 ) after 70 seconds.
+This command will start 2 tasks distributed over the mesos cluster. When these tasks are finished it will start new tasks ( up to 2 ) after 60 seconds.
 
 
 ### Command line parameters
@@ -81,6 +74,8 @@ Usage of ./mesos-http-scheduler:
     	Cpu Resources for one task (default 0.1)
   -debug
     	Print debug logs
+  -img string
+    	Docker image to use
   -master string
     	Master addresses <ip:port>[,<ip:port>..] (default "127.0.0.1:5050")
   -maxtasks int
@@ -96,6 +91,4 @@ Usage of ./mesos-http-scheduler:
 
 ## TODO
 
-1. using docker executor
-2. connect to current mesos master when redirected
-3. reconnect after leader change
+1. reconnect after leader change

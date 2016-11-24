@@ -32,9 +32,16 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 				},
 			}
 		} else {
-			for s.taskLaunched < s.maxTasks &&
-				cpus >= s.cpuPerTask &&
-				mems >= s.memPerTask {
+			for s.taskLaunched < s.maxTasks && cpus >= s.cpuPerTask && mems >= s.memPerTask {
+
+				container := &mesos.ContainerInfo{
+					Type: mesos.ContainerInfo_DOCKER.Enum(),
+					Docker: &mesos.ContainerInfo_DockerInfo{
+						Image:          proto.String(*dockerImage),
+						Network:        mesos.ContainerInfo_DockerInfo_BRIDGE.Enum(),
+						ForcePullImage: proto.Bool(true),
+					},
+				}
 
 				taskID := fmt.Sprintf("%d", time.Now().UnixNano())
 				debugLog(fmt.Sprintln("Preparing task with id ", taskID, " for launch"))
@@ -56,7 +63,8 @@ func (s *scheduler) offers(offers []*mesos.Offer) {
 							Scalar: &mesos.Value_Scalar{Value: proto.Float64(s.memPerTask)},
 						},
 					},
-					Command: s.command,
+					Command:   s.command,
+					Container: container,
 				}
 				tasks = append(tasks, task)
 				s.taskLaunched++
